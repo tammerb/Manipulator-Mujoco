@@ -7,6 +7,7 @@ import gymnasium as gym
 from gymnasium import spaces
 from manipulator_mujoco.arenas import StandardArena
 from manipulator_mujoco.robots import Arm
+from manipulator_mujoco.robots import TWOF85
 from manipulator_mujoco.mocaps import Target
 from manipulator_mujoco.controllers import OperationalSpaceController
 
@@ -50,6 +51,11 @@ class UR5eEnv(gym.Env):
             eef_site_name='eef_site',
             attachment_site_name='attachment_site'
         )
+        self._gripper = TWOF85()
+        
+        # attach gripper to arm
+        self._arm.attach_tool(self._gripper.mjcf_model, pos=[0, 0, 0], quat=[0, 0, 0, 1])
+
 
         # attach arm to arena
         self._arena.attach(
