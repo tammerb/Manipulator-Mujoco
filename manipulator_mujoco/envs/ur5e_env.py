@@ -9,6 +9,7 @@ from manipulator_mujoco.arenas import StandardArena
 from manipulator_mujoco.robots import Arm
 from manipulator_mujoco.robots import TWOF85
 from manipulator_mujoco.props import Primitive
+from manipulator_mujoco.props import Hole
 from manipulator_mujoco.mocaps import Target
 from manipulator_mujoco.controllers import OperationalSpaceController
 
@@ -26,14 +27,11 @@ class UR5eEnv(gym.Env):
         )
 
         # TODO come up with an action space that makes sense
-        self.action_space = spaces.Box(low=np.array([
-            -0.1,
-            -1.6707,
-            1.4707,
-            -1.6707,
-            -1.6707,
-            -0.1]),
-            high=np.array([0.1, -1.4707, 1.6707, -1.4707, -1.4707, 0.1]), shape=(6, ), dtype=np.float32)
+        self.action_space = spaces.Box(
+            low=np.array([-0.1, -1.6707, 1.4707, -1.6707, -1.6707, -0.1]),
+            high=np.array([0.1, -1.4707, 1.6707, -1.4707, -1.4707, 0.1]),
+            shape=(6, ),
+            dtype=np.float64)
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self._render_mode = render_mode
@@ -58,6 +56,13 @@ class UR5eEnv(gym.Env):
             attachment_site_name='attachment_site'
         )
         
+        # place hole in environment
+        self._hole = Hole()
+        self._arena.attach(self._hole.mjcf_model, 
+                           pos=[0.5,0,0], 
+                           quat=[0.7071068, 0, 0, -0.7071068]
+        )
+
         #self._gripper = TWOF85()
         self._gripper = Primitive(type="cylinder", size=[0.02, 0.02], pos=[0,0,0.02], rgba=[1, 0, 0, 1], friction=[1, 0.3, 0.0001])
 

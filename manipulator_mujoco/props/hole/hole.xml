@@ -1,0 +1,83 @@
+<mujoco model="hole">
+  <default>
+    <default class="visual">
+      <geom group="2" type="mesh" contype="0" conaffinity="0"/>
+    </default>
+    <default class="collision">
+      <geom group="3" type="mesh"/>
+    </default>
+  </default>
+  <asset>
+    <material name="color_16089887" specular="0.5" shininess="0.5" rgba="0.9607843137254902 0.5137254901960784 0.12156862745098039 1"/>
+    <mesh file="hole.obj" scale="0.1 0.1 0.1"/>
+    <mesh file="hole_collision_0.obj"/>
+    <mesh file="hole_collision_1.obj"/>
+    <mesh file="hole_collision_2.obj"/>
+    <mesh file="hole_collision_3.obj"/>
+    <mesh file="hole_collision_4.obj"/>
+    <mesh file="hole_collision_5.obj"/>
+    <mesh file="hole_collision_6.obj"/>
+    <mesh file="hole_collision_7.obj"/>
+    <mesh file="hole_collision_8.obj"/>
+    <mesh file="hole_collision_9.obj"/>
+    <mesh file="hole_collision_10.obj"/>
+    <mesh file="hole_collision_11.obj"/>
+    <mesh file="hole_collision_12.obj"/>
+    <mesh file="hole_collision_13.obj"/>
+    <mesh file="hole_collision_14.obj"/>
+    <mesh file="hole_collision_15.obj"/>
+    <mesh file="hole_collision_16.obj"/>
+    <mesh file="hole_collision_17.obj"/>
+    <mesh file="hole_collision_18.obj"/>
+    <mesh file="hole_collision_19.obj"/>
+    <mesh file="hole_collision_20.obj"/>
+    <mesh file="hole_collision_21.obj"/>
+    <mesh file="hole_collision_22.obj"/>
+    <mesh file="hole_collision_23.obj"/>
+    <mesh file="hole_collision_24.obj"/>
+    <mesh file="hole_collision_25.obj"/>
+    <mesh file="hole_collision_26.obj"/>
+    <mesh file="hole_collision_27.obj"/>
+    <mesh file="hole_collision_28.obj"/>
+    <mesh file="hole_collision_29.obj"/>
+    <mesh file="hole_collision_30.obj"/>
+    <mesh file="hole_collision_31.obj"/>
+  </asset>
+  <worldbody>
+    <body name="hole">
+      <geom material="color_16089887" mesh="hole" class="visual"/>
+      <geom mesh="hole_collision_0" class="collision"/>
+      <geom mesh="hole_collision_1" class="collision"/>
+      <geom mesh="hole_collision_2" class="collision"/>
+      <geom mesh="hole_collision_3" class="collision"/>
+      <geom mesh="hole_collision_4" class="collision"/>
+      <geom mesh="hole_collision_5" class="collision"/>
+      <geom mesh="hole_collision_6" class="collision"/>
+      <geom mesh="hole_collision_7" class="collision"/>
+      <geom mesh="hole_collision_8" class="collision"/>
+      <geom mesh="hole_collision_9" class="collision"/>
+      <geom mesh="hole_collision_10" class="collision"/>
+      <geom mesh="hole_collision_11" class="collision"/>
+      <geom mesh="hole_collision_12" class="collision"/>
+      <geom mesh="hole_collision_13" class="collision"/>
+      <geom mesh="hole_collision_14" class="collision"/>
+      <geom mesh="hole_collision_15" class="collision"/>
+      <geom mesh="hole_collision_16" class="collision"/>
+      <geom mesh="hole_collision_17" class="collision"/>
+      <geom mesh="hole_collision_18" class="collision"/>
+      <geom mesh="hole_collision_19" class="collision"/>
+      <geom mesh="hole_collision_20" class="collision"/>
+      <geom mesh="hole_collision_21" class="collision"/>
+      <geom mesh="hole_collision_22" class="collision"/>
+      <geom mesh="hole_collision_23" class="collision"/>
+      <geom mesh="hole_collision_24" class="collision"/>
+      <geom mesh="hole_collision_25" class="collision"/>
+      <geom mesh="hole_collision_26" class="collision"/>
+      <geom mesh="hole_collision_27" class="collision"/>
+      <geom mesh="hole_collision_28" class="collision"/>
+      <geom mesh="hole_collision_29" class="collision"/>
+      <geom mesh="hole_collision_30" class="collision"/>
+      <geom mesh="hole_collision_31" class="collision"/>
+    </body>
+  </worldbody>
+</mujoco>
