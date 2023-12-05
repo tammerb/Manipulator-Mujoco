@@ -10,7 +10,7 @@ from manipulator_mujoco.robots import Arm
 from manipulator_mujoco.robots import TWOF85
 from manipulator_mujoco.props import Primitive
 from manipulator_mujoco.props import Hole
-from manipulator_mujoco.mocaps import Target
+# from manipulator_mujoco.mocaps import Target
 from manipulator_mujoco.controllers import OperationalSpaceController
 
 class UR5eEnv(gym.Env):
@@ -44,7 +44,7 @@ class UR5eEnv(gym.Env):
         self._arena = StandardArena()
 
         # mocap target that OSC will try to follow
-        self._target = Target(self._arena.mjcf_model)
+        # self._target = Target(self._arena.mjcf_model)
 
         # ur5e arm
         self._arm = Arm(
@@ -120,7 +120,7 @@ class UR5eEnv(gym.Env):
                 0.0,
             ]
             # put target in a reasonable starting position
-            self._target.set_mocap_pose(self._physics, position=[0.5, 0, 0.3], quaternion=[0, 0, 0, 1])
+            # self._target.set_mocap_pose(self._physics, position=[0.5, 0, 0.3], quaternion=[0, 0, 0, 1])
 
         observation = self._get_obs()
         info = self._get_info()
@@ -132,10 +132,10 @@ class UR5eEnv(gym.Env):
         self._physics.bind(self._arm.joints).qpos = action
         
         # get mocap target pose
-        target_pose = self._target.get_mocap_pose(self._physics)
+        # target_pose = self._target.get_mocap_pose(self._physics)
 
         # run OSC controller to move to target pose
-        self._controller.run(target_pose)
+        # self._controller.run(target_pose)
 
         # step physics
         self._physics.step()
