@@ -59,7 +59,7 @@ class UR5eEnv(gym.Env):
         # place hole in environment
         self._hole = Hole()
         self._arena.attach(self._hole.mjcf_model, 
-                           pos=[0.5,0,0], 
+                           pos=[0,0.5,0], 
                            quat=[0.7071068, 0, 0, -0.7071068]
         )
 
@@ -130,6 +130,7 @@ class UR5eEnv(gym.Env):
     def step(self, action: np.ndarray) -> tuple:
         # TODO use the action to control the arm
         self._physics.bind(self._arm.joints).qpos = action
+        
         # get mocap target pose
         target_pose = self._target.get_mocap_pose(self._physics)
 
