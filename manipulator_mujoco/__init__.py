@@ -24,3 +24,11 @@ register(
     # max_episode_steps=300,
     # TODO: Uncomment the above line if you want to set a maximum episode step limit
 )
+
+register(
+    id="manipulator_mujoco/UR5eSBEnvPos-v0",
+    entry_point="manipulator_mujoco.envs:UR5eSBEnvPos",
+    # Optionally, you can set a maximum number of steps per episode
+    # max_episode_steps=300,
+    # TODO: Uncomment the above line if you want to set a maximum episode step limit
+)

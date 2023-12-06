@@ -1,37 +1,43 @@
+import numpy as np
+import math
+import gymnasium as gym
+from gymnasium import spaces
+
 import time
 import os
 import numpy as np
 from dm_control import mjcf
 import mujoco.viewer
-import gymnasium as gym
-from gymnasium import spaces
 from manipulator_mujoco.arenas import StandardArena
 from manipulator_mujoco.robots import Arm
 from manipulator_mujoco.robots import TWOF85
 from manipulator_mujoco.props import Primitive
 from manipulator_mujoco.props import Hole
-# from manipulator_mujoco.mocaps import Target
 from manipulator_mujoco.controllers import OperationalSpaceController
 
-class UR5eEnv(gym.Env):
-
-    metadata = {
-        "render_modes": ["human", "rgb_array"],
-        "render_fps": None,
-    }  # TODO add functionality to render_fps
+class UR5eSBEnvPos(gym.Env):
+    metadata = {"render_modes": ["human", "rgb_array"],
+                "render_fps": None}
 
     def __init__(self, render_mode=None):
-        # TODO come up with an observation space that makes sense
+        super().__init__()
+        # Define action and observation space
+        self.action_space = spaces.Box(
+            low=np.array([0.0, -0.5, 0.0]),
+            high=np.array([1.0, 1.5, 1.0]),
+            shape=(3, ),
+            dtype=np.float64)
+
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float64
+            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float64
         )
 
-        # TODO come up with an action space that makes sense
-        self.action_space = spaces.Box(
-            low=np.array([-0.1, -1.6707, 1.4707, -1.6707, -1.6707, -0.1]),
-            high=np.array([0.1, -1.4707, 1.6707, -1.4707, -1.4707, 0.1]),
-            shape=(6, ),
-            dtype=np.float64)
+        # TODO Make goal eef pose random during reset
+        self.goal_eef_pose = np.array([0.49, 0.13, 0.0]) # (x,y,z)
+        
+        self.start_euc_dist = np.inf
+        self.terminate_criteria = 0.01
+
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self._render_mode = render_mode
@@ -42,9 +48,6 @@ class UR5eEnv(gym.Env):
         
         # checkerboard floor
         self._arena = StandardArena()
-
-        # mocap target that OSC will try to follow
-        # self._target = Target(self._arena.mjcf_model)
 
         # ur5e arm
         self._arm = Arm(
@@ -59,16 +62,14 @@ class UR5eEnv(gym.Env):
         # place hole in environment
         self._hole = Hole()
         self._arena.attach(self._hole.mjcf_model, 
-                           pos=[0,0.5,0], 
+                           pos=self.goal_eef_pose, 
                            quat=[0.7071068, 0, 0, -0.7071068]
         )
 
-        #self._gripper = TWOF85()
         self._gripper = Primitive(type="cylinder", size=[0.02, 0.02], pos=[0,0,0.02], rgba=[1, 0, 0, 1], friction=[1, 0.3, 0.0001])
 
         # attach gripper to arm
         self._arm.attach_tool(self._gripper.mjcf_model, pos=[0, 0, 0], quat=[0, 0, 0, 1])
-
 
         # attach arm to arena
         self._arena.attach(
@@ -97,20 +98,77 @@ class UR5eEnv(gym.Env):
         self._viewer = None
         self._step_start = None
 
+    def _get_euc_dist(self, dx, dy, dz):
+        euc_dist = math.sqrt((dx)**2 + (dy)**2 + (dz)**2)
+        return euc_dist
+
     def _get_obs(self) -> np.ndarray:
         # TODO come up with an observations that makes sense for your RL task
-        return np.zeros(6)
+        x, y, z, xx, yy, zz, ww = self._arm.get_eef_pose(self._physics)
+        tx, ty, tz = self.goal_eef_pose
+        return np.array([x - tx, y - ty, z - tz])
+        #return np.zeros(6)
+
+    def _wait_while_moving(self, action) -> bool:
+        tolerance = 0.001
+        x, y, z, xx, yy, zz, ww = self._arm.get_eef_pose(self._physics)
+        current_pos = [x, y, z]
+        dist = np.linalg.norm(current_pos - action)
+        while dist > 0.001:
+            x, y, z, xx, yy, zz, ww = self._arm.get_eef_pose(self._physics)
+            current_pos = [x, y, z]
+            dist = np.linalg.norm(current_pos - action)
+            print(dist)
+        return True
 
     def _get_info(self) -> dict:
         # TODO come up with an info dict that makes sense for your RL task
         return {}
 
-    def reset(self, seed=None, options=None) -> tuple:
+    def step(self, action):
+        # TODO Catch bad action requests and terminate
+        print("%%%%%%%%%%%%%%%%     Commanded action      %%%%%%%%%%%%%%%%%")
+        print(action)
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+
+        # TODO sleep while the arm moves from current to commanded pose (speed up?)
+        terminated = False
+
+        # Turn 3dof action into 7 dof pose for controller
+        action7dof = np.append(action, [0,0,0,1])
+
+        self._controller.run(action7dof)
+
+        # step physics
+        self._physics.step()
+
+        # render frame
+        if self._render_mode == "human":
+            self._render_frame()
+      
+        # TODO come up with a reward, termination function that makes sense for your RL task
+        observation = self._get_obs()
+        euc_dist = self._get_euc_dist(observation[0], observation[1], observation[2])
+        dist = euc_dist
+        if dist < self.start_euc_dist:
+            reward = 1
+        else: reward = -1
+        self.start_euc_dist = dist
+
+        if dist < self.terminate_criteria:
+            truncated = True
+        else: truncated = False
+        info = self._get_info()
+
+        return observation, reward, terminated, truncated, info
+
+    def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
         # reset physics
         with self._physics.reset_context():
-            # put arm in a reasonable starting position
+            # TODO Make starting position random
+            # FOR NOW put arm in a reasonable starting position
             self._physics.bind(self._arm.joints).qpos = [
                 0.0,
                 -1.5707,
@@ -119,38 +177,10 @@ class UR5eEnv(gym.Env):
                 -1.5707,
                 0.0,
             ]
-            # put target in a reasonable starting position
-            # self._target.set_mocap_pose(self._physics, position=[0.5, 0, 0.3], quaternion=[0, 0, 0, 1])
-
         observation = self._get_obs()
         info = self._get_info()
 
         return observation, info
-
-    def step(self, action: np.ndarray) -> tuple:
-        # TODO use the action to control the arm
-        self._physics.bind(self._arm.joints).qpos = action
-        
-        # get mocap target pose
-        # target_pose = self._target.get_mocap_pose(self._physics)
-
-        # run OSC controller to move to target pose
-        # self._controller.run(target_pose)
-
-        # step physics
-        self._physics.step()
-
-        # render frame
-        if self._render_mode == "human":
-            self._render_frame()
-        
-        # TODO come up with a reward, termination function that makes sense for your RL task
-        observation = self._get_obs()
-        reward = 0
-        terminated = False
-        info = self._get_info()
-
-        return observation, reward, terminated, False, info
 
     def render(self) -> np.ndarray:
         """

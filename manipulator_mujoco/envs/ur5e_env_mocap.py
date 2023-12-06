@@ -10,12 +10,10 @@ from manipulator_mujoco.robots import Arm
 from manipulator_mujoco.robots import TWOF85
 from manipulator_mujoco.props import Primitive
 from manipulator_mujoco.props import Hole
-#from manipulator_mujoco.mocaps import Target
+from manipulator_mujoco.mocaps import Target
 from manipulator_mujoco.controllers import OperationalSpaceController
 
-import math
-
-class UR5eEnvPos(gym.Env):
+class UR5eEnv(gym.Env):
 
     metadata = {
         "render_modes": ["human", "rgb_array"],
@@ -23,22 +21,15 @@ class UR5eEnvPos(gym.Env):
     }  # TODO add functionality to render_fps
 
     def __init__(self, render_mode=None):
-
-        self.goal_eef_pose = np.array([0.49, 0.13, 0.0]) # (x,y,z)
-        self.start_euc_dist = np.inf
-        self.terminate_criteria = 0.01
-
         # TODO come up with an observation space that makes sense
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float64
+            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float64
         )
 
         # TODO come up with an action space that makes sense
         self.action_space = spaces.Box(
-            low=np.array([-10, -10, -10, 0,0,0, 1]),
-            high=np.array([10, 10, 10,0,0,0, 1]),
-            #low=np.array([0, -1.5707, 1.5707, -1.5707, -1.5707, 0]),
-            #high=np.array([0, -1.5707, 1.5707, -1.5707, -1.5707, 0]),
+            low=np.array([-0.1, -0.1, -0.1, 0, 0, 0, 1]),
+            high=np.array([0.1, 0.1, 0.1, 0, 0, 0, 1]),
             shape=(7, ),
             dtype=np.float64)
 
@@ -53,7 +44,7 @@ class UR5eEnvPos(gym.Env):
         self._arena = StandardArena()
 
         # mocap target that OSC will try to follow
-        # self._target = Target(self._arena.mjcf_model)
+        self._target = Target(self._arena.mjcf_model)
 
         # ur5e arm
         self._arm = Arm(
@@ -68,8 +59,8 @@ class UR5eEnvPos(gym.Env):
         # place hole in environment
         self._hole = Hole()
         self._arena.attach(self._hole.mjcf_model, 
-                           pos=self.goal_eef_pose, 
-                           quat=[0.7071068, 0, 0, -0.7071068]
+                           pos=[0,0.5,0], 
+                           quat=[0.7071068, 0, 0, -0.7071068],
         )
 
         #self._gripper = TWOF85()
@@ -106,16 +97,9 @@ class UR5eEnvPos(gym.Env):
         self._viewer = None
         self._step_start = None
 
-    def _get_euc_dist(self, dx, dy, dz):
-        euc_dist = math.sqrt((dx)**2 + (dy)**2 + (dz)**2)
-        return euc_dist
-
     def _get_obs(self) -> np.ndarray:
         # TODO come up with an observations that makes sense for your RL task
-        x, y, z, xx, yy, zz, ww = self._arm.get_eef_pose(self._physics)
-        tx, ty, tz = self.goal_eef_pose
-        return np.array([x - tx, y - ty, z - tz])
-        #return np.zeros(6)
+        return np.zeros(6)
 
     def _get_info(self) -> dict:
         # TODO come up with an info dict that makes sense for your RL task
@@ -136,7 +120,7 @@ class UR5eEnvPos(gym.Env):
                 0.0,
             ]
             # put target in a reasonable starting position
-            # self._target.set_mocap_pose(self._physics, position=[0.5, 0, 0.3], quaternion=[0, 0, 0, 1])
+            self._target.set_mocap_pose(self._physics, position=[0.5, 0, 0.3], quaternion=[0, 0, 0, 1])
 
         observation = self._get_obs()
         info = self._get_info()
@@ -148,10 +132,11 @@ class UR5eEnvPos(gym.Env):
         #self._physics.bind(self._arm.joints).qpos = action
         
         # get mocap target pose
-        # target_pose = self._target.get_mocap_pose(self._physics)
+        target_pose = self._target.get_mocap_pose(self._physics)
+        print(target_pose)
 
         # run OSC controller to move to target pose
-        self._controller.run(action)
+        self._controller.run(target_pose)
 
         # step physics
         self._physics.step()
@@ -162,17 +147,8 @@ class UR5eEnvPos(gym.Env):
         
         # TODO come up with a reward, termination function that makes sense for your RL task
         observation = self._get_obs()
-        euc_dist = self._get_euc_dist(observation[0], observation[1], observation[2])
-        print(euc_dist)
-        dist = euc_dist
-        if dist < self.start_euc_dist:
-            reward = 1
-        else: reward = -1
-        self.start_euc_dist = dist
-
-        if dist < self.terminate_criteria:
-            terminated = True
-        else: terminated = False
+        reward = 0
+        terminated = False
         info = self._get_info()
 
         return observation, reward, terminated, False, info
