@@ -10,7 +10,7 @@ env = gymnasium.make('manipulator_mujoco/UR5eSBEnvPos-v0', render_mode='human')
 
 ### https://stable-baselines.readthedocs.io/en/master/modules/sac.html
 model = SAC("MlpPolicy", env, verbose=1)
-model.learn(total_timesteps=100, log_interval=4)
+model.learn(total_timesteps=1000, log_interval=4)
 model.save("sac_ur5e_pos")
 del model # remove to demonstrate saving and loading
 

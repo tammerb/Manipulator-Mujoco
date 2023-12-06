@@ -23,8 +23,8 @@ class UR5eSBEnvPos(gym.Env):
         super().__init__()
         # Define action and observation space
         self.action_space = spaces.Box(
-            low=np.array([0.0, -0.5, 0.0]),
-            high=np.array([1.0, 1.5, 1.0]),
+            low=np.array([0.39, 0.12, 0.08]),
+            high=np.array([0.59, 0.14, 0.1]),
             shape=(3, ),
             dtype=np.float64)
 
@@ -109,18 +109,6 @@ class UR5eSBEnvPos(gym.Env):
         return np.array([x - tx, y - ty, z - tz])
         #return np.zeros(6)
 
-    def _wait_while_moving(self, action) -> bool:
-        tolerance = 0.001
-        x, y, z, xx, yy, zz, ww = self._arm.get_eef_pose(self._physics)
-        current_pos = [x, y, z]
-        dist = np.linalg.norm(current_pos - action)
-        while dist > 0.001:
-            x, y, z, xx, yy, zz, ww = self._arm.get_eef_pose(self._physics)
-            current_pos = [x, y, z]
-            dist = np.linalg.norm(current_pos - action)
-            print(dist)
-        return True
-
     def _get_info(self) -> dict:
         # TODO come up with an info dict that makes sense for your RL task
         return {}
@@ -140,8 +128,8 @@ class UR5eSBEnvPos(gym.Env):
         self._controller.run(action7dof)
 
         # step physics
-        self._physics.step()
-
+        for _ in range(100):
+            self._physics.step()
         # render frame
         if self._render_mode == "human":
             self._render_frame()
