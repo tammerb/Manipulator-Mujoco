@@ -22,8 +22,12 @@ class UR5eSBEnvPos(gym.Env):
         super().__init__()
         # Define action and observation space
         self.action_space = spaces.Box(
-            low=np.array([-1.0, -0.5, 0.05]),
-            high=np.array([1.0, 1.0, 0.5]),
+            low=np.array([ 0.493 - 0.3,
+                           0.128 - 0.3,
+                           0.448 - 0.3]),
+            high=np.array([0.493 + 0.3,
+                           0.128 + 0.3,
+                           0.448 + 0.3]),
             shape=(3, ),
             dtype=np.float64)
 
@@ -32,9 +36,8 @@ class UR5eSBEnvPos(gym.Env):
         )
         self.reward = 0
         # TODO Make goal eef pose random during reset
-        self.goal_eef_pose = np.array([0.5, 0.15, 0.15]) # (x,y,z)
+        self.goal_eef_pose = np.array([0.15, 0.15, 0.15]) # (x,y,z)
         
-        self.start_euc_dist = np.inf
         self.truncate_criteria = 0.03
         self.terminate_counter = 0
 
@@ -60,9 +63,9 @@ class UR5eSBEnvPos(gym.Env):
         )
         
         # place target in environment
-        self._target = Primitive(type="cylinder", size=[0.02, 0.02], pos=[0,0,0], rgba=[0, 0, 1, 1])
+        self._target = Primitive(type="cylinder", size=[0.01, 0.01], pos=[0,0,0], rgba=[0, 0, 1, 1])
         self._arena.attach(self._target.mjcf_model, 
-                           pos=self.goal_eef_pose
+                           pos=[0,0,0]
         )
         self._gripper = Primitive(type="cylinder", size=[0.02, 0.02], pos=[0,0,0.02], rgba=[1, 0, 0, 1], friction=[1, 0.3, 0.0001])
 
@@ -132,57 +135,53 @@ class UR5eSBEnvPos(gym.Env):
         # TODO come up with a reward, termination function that makes sense for your RL task
         observation = self._get_obs()
         euc_dist = self._get_euc_dist(observation[0], observation[1], observation[2])
-        dist = euc_dist
-        if dist < self.start_euc_dist:
-            self.reward += 1
-        else: self.reward -= 1
-        print("Reward: {}".format(self.reward))
-        self.start_euc_dist = dist
-
-        # TODO Catch bad action requests and terminate
+        self.reward -= 0.6*euc_dist
+        self.reward -= 0.4*np.sum(np.absolute(observation))
+        
         self.terminate_counter += 1
-        if self.terminate_counter > 50:
-            print(" *** TERMINATED *** ")
+        if self.terminate_counter > 20:
             terminated = True
 
-
-        if dist < self.truncate_criteria:
-            print(" --- TRUNCATED --- ")
+        if euc_dist < self.truncate_criteria:
+            self.reward += 60
             truncated = True
         else: truncated = False
+
         info = self._get_info()
         reward = self.reward
-
+        print("Reward: {}".format(reward))
         return observation, reward, terminated, truncated, info
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-
-        print(" ####  RESETTING  #### ")
 
         # reset physics
         with self._physics.reset_context():
             # TODO Make starting position random
             # FOR NOW put arm in a reasonable starting position
 
-            random_arm_reset = np.random.uniform(low=-0.5, high = 0.5)
+            random_arm_reset = np.random.uniform(low=-0.1, high = 0.1)
 
             self._physics.bind(self._arm.joints).qpos = [
                 0.0 + random_arm_reset,
                 -1.5707 + random_arm_reset, 
                 1.5707+ random_arm_reset,
                 -1.5707 + random_arm_reset, 
-                -1.6707 + random_arm_reset, 
+                -1.5707 + random_arm_reset, 
                 0.0 + random_arm_reset
             ]
-
+            x_offset = 0.2
+            y_offset = 0.2
+            z_offset = 0.2
             self.goal_eef_pose = np.array([
-                np.random.uniform(low= -0.5, high = 0.5),
-                np.random.uniform(low= 0.10, high = 0.5),
-                np.random.uniform(low= 0.01, high = 0.5)
+                np.random.uniform(low= 0.493 - x_offset, high = 0.493 + x_offset),
+                np.random.uniform(low= 0.128 - y_offset, high = 0.128 + y_offset),
+                np.random.uniform(low= 0.448 - z_offset, high = 0.448 + z_offset)
             ])
+            #low=np.array([-0.1, 0.2, 0.2]),
+            #high=np.array([0.1, 0.25, 0.3]),
             
-            # Move Target object here to goal_eef_pose
+            self._physics.bind(self._target.geom).pos = self.goal_eef_pose
 
             self.terminate_counter = 0
             self.reward = 0

@@ -23,17 +23,17 @@ callback = SaveOnBestTrainingRewardCallback(check_freq=200, log_dir=log_dir)
 
 model = SAC("MlpPolicy", env, verbose=1)
 
-timesteps = 1e3
+timesteps = 2e4
 
 model.learn(total_timesteps=timesteps, log_interval=4, callback=callback)
 plot_results([log_dir], timesteps, results_plotter.X_TIMESTEPS, "SAC UR5e")
 plt.show()
-model.save("sac_ur5e")
+model.save("sac_ur5e_4")
 print("Done training...")
 
 del model # remove to demonstrate saving and loading
 
-model = SAC.load("sac_ur5e")
+model = SAC.load("sac_ur5e_4")
 
 #print("***********Evaluating the model... ***********")
 #mean_reward, std_reward = evaluate_policy(model, 
