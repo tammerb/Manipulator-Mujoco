@@ -64,7 +64,7 @@ class StandardArena(object):
         frame.pos = pos
         frame.quat = quat
         return frame
-    
+        
     @property
     def mjcf_model(self) -> mjcf.RootElement:
         """

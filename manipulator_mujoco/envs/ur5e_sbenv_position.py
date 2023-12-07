@@ -12,7 +12,6 @@ from manipulator_mujoco.arenas import StandardArena
 from manipulator_mujoco.robots import Arm
 from manipulator_mujoco.robots import TWOF85
 from manipulator_mujoco.props import Primitive
-from manipulator_mujoco.props import Hole
 from manipulator_mujoco.controllers import OperationalSpaceController
 
 class UR5eSBEnvPos(gym.Env):
@@ -23,20 +22,21 @@ class UR5eSBEnvPos(gym.Env):
         super().__init__()
         # Define action and observation space
         self.action_space = spaces.Box(
-            low=np.array([0.39, 0.12, 0.08]),
-            high=np.array([0.59, 0.14, 0.1]),
+            low=np.array([-1.0, -0.5, 0.05]),
+            high=np.array([1.0, 1.0, 0.5]),
             shape=(3, ),
             dtype=np.float64)
 
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(3,), dtype=np.float64
         )
-
+        self.reward = 0
         # TODO Make goal eef pose random during reset
-        self.goal_eef_pose = np.array([0.49, 0.13, 0.0]) # (x,y,z)
+        self.goal_eef_pose = np.array([0.5, 0.15, 0.15]) # (x,y,z)
         
         self.start_euc_dist = np.inf
-        self.terminate_criteria = 0.01
+        self.truncate_criteria = 0.03
+        self.terminate_counter = 0
 
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
@@ -59,13 +59,11 @@ class UR5eSBEnvPos(gym.Env):
             attachment_site_name='attachment_site'
         )
         
-        # place hole in environment
-        self._hole = Hole()
-        self._arena.attach(self._hole.mjcf_model, 
-                           pos=self.goal_eef_pose, 
-                           quat=[0.7071068, 0, 0, -0.7071068]
+        # place target in environment
+        self._target = Primitive(type="cylinder", size=[0.02, 0.02], pos=[0,0,0], rgba=[0, 0, 1, 1])
+        self._arena.attach(self._target.mjcf_model, 
+                           pos=self.goal_eef_pose
         )
-
         self._gripper = Primitive(type="cylinder", size=[0.02, 0.02], pos=[0,0,0.02], rgba=[1, 0, 0, 1], friction=[1, 0.3, 0.0001])
 
         # attach gripper to arm
@@ -114,13 +112,10 @@ class UR5eSBEnvPos(gym.Env):
         return {}
 
     def step(self, action):
-        # TODO Catch bad action requests and terminate
-        print("%%%%%%%%%%%%%%%%     Commanded action      %%%%%%%%%%%%%%%%%")
-        print(action)
-        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+        terminated = False
 
         # TODO sleep while the arm moves from current to commanded pose (speed up?)
-        terminated = False
+
 
         # Turn 3dof action into 7 dof pose for controller
         action7dof = np.append(action, [0,0,0,1])
@@ -128,43 +123,72 @@ class UR5eSBEnvPos(gym.Env):
         self._controller.run(action7dof)
 
         # step physics
-        for _ in range(100):
+        for _ in range(20):
             self._physics.step()
-        # render frame
-        if self._render_mode == "human":
-            self._render_frame()
+            # render frame
+            if self._render_mode == "human":
+                self._render_frame()
       
         # TODO come up with a reward, termination function that makes sense for your RL task
         observation = self._get_obs()
         euc_dist = self._get_euc_dist(observation[0], observation[1], observation[2])
         dist = euc_dist
         if dist < self.start_euc_dist:
-            reward = 1
-        else: reward = -1
+            self.reward += 1
+        else: self.reward -= 1
+        print("Reward: {}".format(self.reward))
         self.start_euc_dist = dist
 
-        if dist < self.terminate_criteria:
+        # TODO Catch bad action requests and terminate
+        self.terminate_counter += 1
+        if self.terminate_counter > 50:
+            print(" *** TERMINATED *** ")
+            terminated = True
+
+
+        if dist < self.truncate_criteria:
+            print(" --- TRUNCATED --- ")
             truncated = True
         else: truncated = False
         info = self._get_info()
+        reward = self.reward
 
         return observation, reward, terminated, truncated, info
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
+        print(" ####  RESETTING  #### ")
+
         # reset physics
         with self._physics.reset_context():
             # TODO Make starting position random
             # FOR NOW put arm in a reasonable starting position
+
+            random_arm_reset = np.random.uniform(low=-0.5, high = 0.5)
+
             self._physics.bind(self._arm.joints).qpos = [
-                0.0,
-                -1.5707,
-                1.5707,
-                -1.5707,
-                -1.5707,
-                0.0,
+                0.0 + random_arm_reset,
+                -1.5707 + random_arm_reset, 
+                1.5707+ random_arm_reset,
+                -1.5707 + random_arm_reset, 
+                -1.6707 + random_arm_reset, 
+                0.0 + random_arm_reset
             ]
+
+            self.goal_eef_pose = np.array([
+                np.random.uniform(low= -0.5, high = 0.5),
+                np.random.uniform(low= 0.10, high = 0.5),
+                np.random.uniform(low= 0.01, high = 0.5)
+            ])
+            
+            # Move Target object here to goal_eef_pose
+
+            self.terminate_counter = 0
+            self.reward = 0
+
+
+
         observation = self._get_obs()
         info = self._get_info()
 

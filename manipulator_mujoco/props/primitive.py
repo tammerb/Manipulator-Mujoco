@@ -27,3 +27,6 @@ class Primitive(object):
     def mjcf_model(self):
         """Returns the primitive's mjcf model."""
         return self._mjcf_model
+    
+    def detach(self):
+        self._mjcf_model.detach()
