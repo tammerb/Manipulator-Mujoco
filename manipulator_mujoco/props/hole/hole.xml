@@ -8,8 +8,8 @@
     </default>
   </default>
   <asset>
-    <material name="color_16089887" specular="0.5" shininess="0.5" rgba="0.9607843137254902 0.5137254901960784 0.12156862745098039 1"/>
-    <mesh file="hole.obj" scale="0.1 0.1 0.1"/>
+    <material name="color_1650274" specular="0.5" shininess="0.5" rgba="0.09803921568627451 0.1803921568627451 0.3843137254901961 1"/>
+    <mesh file="hole.obj"/>
     <mesh file="hole_collision_0.obj"/>
     <mesh file="hole_collision_1.obj"/>
     <mesh file="hole_collision_2.obj"/>
@@ -45,7 +45,7 @@
   </asset>
   <worldbody>
     <body name="hole">
-      <geom material="color_16089887" mesh="hole" class="visual"/>
+      <geom material="color_1650274" mesh="hole" class="visual"/>
       <geom mesh="hole_collision_0" class="collision"/>
       <geom mesh="hole_collision_1" class="collision"/>
       <geom mesh="hole_collision_2" class="collision"/>

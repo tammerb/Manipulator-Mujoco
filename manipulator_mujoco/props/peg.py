@@ -4,11 +4,11 @@ import os
 
 
 
-class Hole(Primitive):
+class Peg(Primitive):
     def __init__(self):
         self._xml_path = os.path.join(
             os.path.dirname(__file__),
-            './hole/hole.xml',
+            './peg/peg.xml',
         )
         self._mjcf_root = mjcf.from_path(self._xml_path)
 

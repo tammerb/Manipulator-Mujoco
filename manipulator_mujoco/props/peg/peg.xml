@@ -1,0 +1,20 @@
+<mujoco model="peg">
+  <default>
+    <default class="visual">
+      <geom group="2" type="mesh" contype="0" conaffinity="0"/>
+    </default>
+    <default class="collision">
+      <geom group="3" type="mesh"/>
+    </default>
+  </default>
+  <asset>
+    <material name="color_14789940" specular="0.5" shininess="0.5" rgba="0.8823529411764706 0.6784313725490196 0.20392156862745098 1"/>
+    <mesh file="peg.obj"/>
+  </asset>
+  <worldbody>
+    <body name="peg">
+      <geom material="color_14789940" mesh="peg" class="visual"/>
+      <geom mesh="peg" class="collision"/>
+    </body>
+  </worldbody>
+</mujoco>

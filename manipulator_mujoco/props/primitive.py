@@ -30,3 +30,15 @@ class Primitive(object):
     
     def detach(self):
         self._mjcf_model.detach()
+
+    def get_pose(self, physics):
+        
+        position = physics.bind(self.mocap).mocap_pos[:]
+        quaternion = physics.bind(self.mocap).mocap_quat[:]
+
+        # flip quaternion wxyz to xyzw
+        quaternion = np.roll(np.array(quaternion), -1)
+
+        pose = np.concatenate([position, quaternion])
+
+        return pose
