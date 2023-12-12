@@ -1,4 +1,5 @@
 from manipulator_mujoco.envs.aubo_i5_env import AuboI5Env
 from manipulator_mujoco.envs.ur5e_env_mocap import UR5eEnv
-from manipulator_mujoco.envs.ur5e_env_position import UR5eEnvPos
-from manipulator_mujoco.envs.ur5e_sbenv_position import UR5eSBEnvPos
+from manipulator_mujoco.envs.ur5e_sbenv_pos import UR5eSBEnvPos
+from manipulator_mujoco.envs.ur5e_sbenv_vel import UR5eSBEnvVel
+from manipulator_mujoco.envs.ur5e_sbenv_vel_pih import UR5eSBEnvVelPIH
