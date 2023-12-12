@@ -5,7 +5,10 @@ from manipulator_mujoco.utils.transform_utils import (
 import numpy as np
 
 class Arm():
-    def __init__(self, xml_path, eef_site_name, attachment_site_name, joint_names = None, name: str = None):
+    def __init__(self, xml_path, eef_site_name, attachment_site_name, 
+                 force_sensor_name='force_sensor', 
+                 torque_sensor_name='torque_sensor', 
+                 joint_names = None, name: str = None):
         self._mjcf_root = mjcf.from_path(xml_path)
         if name:
             self._mjcf_root.model = name
@@ -18,6 +21,8 @@ class Arm():
         
         self._eef_site = self._mjcf_root.find('site', eef_site_name)
         self._attachment_site = self._mjcf_root.find('site', attachment_site_name)
+        self._force_sensor = self.mjcf_model.sensor.add('force', site=self._attachment_site)
+        self._torque_sensor = self.mjcf_model.sensor.add('torque', site=self._attachment_site)
 
     @property
     def joints(self):

@@ -134,6 +134,13 @@
     <general class="size1" name="wrist_3" joint="wrist_3_joint"/> -->
   </actuator>
 
+  <sensor>
+    <force name="force" site="eef_site"></force>
+  </sensor>
+  <sensor>
+    <torque name="torque" site="eef_site"></torque>
+  </sensor>
+
   <!-- <keyframe>
     <key name="home" qpos="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0" ctrl="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0"/>
   </keyframe> -->
