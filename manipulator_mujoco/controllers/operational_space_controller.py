@@ -103,6 +103,50 @@ class OperationalSpaceController(JointEffortController):
         # send the target effort to the joint effort controller
         super().run(u)
 
+    def vrun(self, target):
+        # target velocity is a 6D vector
+        target_vel = np.append(target, [0,0,0])
+
+        # Get the Jacobian matrix for the end-effector.
+        J = get_site_jac(
+            self._physics.model.ptr, 
+            self._physics.data.ptr, 
+            self._eef_id,
+        )
+        J = J[:, self._jnt_dof_ids]
+
+        # Get the mass matrix and its inverse for the controlled degrees of freedom (DOF) of the robot.
+        M_full = get_fullM(
+            self._physics.model.ptr, 
+            self._physics.data.ptr,
+        )
+        M = M_full[self._jnt_dof_ids, :][:, self._jnt_dof_ids]
+        Mx, M_inv = task_space_inertia_matrix(M, J)
+
+        # Get the joint velocities for the controlled DOF.
+        dq = self._physics.bind(self._joints).qvel
+
+        # Initialize the task space control signal (desired end-effector motion).
+        u_task = np.zeros(6)
+
+        # Calculate the task space control signal.
+        u_task += self._scale_signal_vel_limited(target_vel)
+
+        # joint space control signal
+        u = np.zeros(self._dof)
+        
+        # Add the task space control signal to the joint space control signal
+        u += np.dot(J.T, np.dot(Mx, u_task))
+
+        # Add damping to joint space control signal
+        u += -self._kv * np.dot(M, dq)
+
+        # Add gravity compensation to the target effort
+        u += self._physics.bind(self._joints).qfrc_bias
+
+        # send the target effort to the joint effort controller
+        super().run(u)
+
     def _scale_signal_vel_limited(self, u_task: np.ndarray) -> np.ndarray:
         """
         Scale the control signal such that the arm isn't driven to move faster in position or orientation than the specified vmax values.
