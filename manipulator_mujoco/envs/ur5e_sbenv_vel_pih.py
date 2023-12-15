@@ -15,6 +15,9 @@ from manipulator_mujoco.props import Hole
 from manipulator_mujoco.props import Peg
 from manipulator_mujoco.props import Primitive
 from manipulator_mujoco.controllers import OperationalSpaceController
+from manipulator_mujoco.utils.transform_utils import (
+    quat_distance
+)
 
 class UR5eSBEnvVelPIH(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"],
@@ -30,13 +33,11 @@ class UR5eSBEnvVelPIH(gym.Env):
             dtype=np.float64)
 
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float64
+            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float64
         )
         self.reward = 0
-        # TODO Make goal eef pose random during reset
-        self.goal_eef_pose = np.array([0.5, 0.0, 0.0]) # (x,y,z)
         
-        self.truncate_criteria = 0.03
+        self.truncate_criteria = 0.005
         self.terminate_counter = 0
 
 
@@ -55,9 +56,7 @@ class UR5eSBEnvVelPIH(gym.Env):
             xml_path= os.path.join(
                 os.path.dirname(__file__),'../assets/robots/ur5e/ur5e.xml',),
             eef_site_name='eef_site',
-            attachment_site_name='attachment_site',
-            force_sensor_name='force_sensor',
-            torque_sensor_name='torque_sensor'
+            attachment_site_name='attachment_site'
         )
         
         # place hole in environment
@@ -79,6 +78,15 @@ class UR5eSBEnvVelPIH(gym.Env):
         # generate model
         self._physics = mjcf.Physics.from_mjcf_model(self._arena.mjcf_model)
 
+        self.initial_eef_pose = self._arm.get_eef_pose(self._physics)
+        self.goal_eef_pose = np.array([0.5,
+                                       0.0,
+                                       0.0,
+                                       0.0,
+                                       0.0,
+                                       0.0,
+                                       1.0]) # (x,y,z,qx,qy,qz,qw)
+        
         # set up OSC controller
         self._controller = OperationalSpaceController(
             physics=self._physics,
@@ -98,27 +106,42 @@ class UR5eSBEnvVelPIH(gym.Env):
         self._viewer = None
         self._step_start = None
 
-        self._data = mujoco.MjData.sensor
-
+        self.sensors = self._arm._mjcf_root.find_all('sensor')
+        #self.eef_vel = self._arm.forearm.qvel
+        
 
     def _get_euc_dist(self, dx, dy, dz):
         euc_dist = math.sqrt((dx)**2 + (dy)**2 + (dz)**2)
         return euc_dist
 
     def _get_obs(self) -> np.ndarray:
-        # TODO come up with an observations that makes sense for your RL task
-        x, y, z, xx, yy, zz, ww = self._arm.get_eef_pose(self._physics)
-        tx, ty, tz = self.goal_eef_pose
-        return np.array([x - tx, y - ty, z - tz])
-        #return np.zeros(6)
+
+        # Pose difference observation
+        x, y, z, qx, qy, qz, qw = self._arm.get_eef_pose(self._physics)
+        goal_x, goal_y, goal_z, goal_qx, goal_qy, goal_qz, goal_qw = self.goal_eef_pose
+        quat_dist = quat_distance([qx,qy,qz,qw,],
+                                      [goal_qx, goal_qy, goal_qz, goal_qw])
+
+        #print(quat_dist)
+        #self._data = self._physics.bind(self.sensors).sensordata
+        #force_x, force_y, force_z = self._data[6:9]
+        #torqx, torqy, torqz = self._data[9:]
+
+        return np.array([x - goal_x,
+                         y - goal_y,
+                         z - goal_z,
+                         quat_dist[0],
+                         quat_dist[1],
+                         quat_dist[2]])
 
     def _get_info(self) -> dict:
         arm_qpos = self._physics.bind(self._arm.joints).qpos
         arm_qvel = self._physics.bind(self._arm.joints).qvel
-        return {'pos': arm_qpos, 'vel': arm_qvel}
+        return {'joint_pos': arm_qpos, 'joing_vel': arm_qvel}
 
     def step(self, action):
-        print(self._data)
+        #peg_geom = self._peg.geom()
+        #print(dir(self._physics.bind(peg_geom)))
         terminated = False
 
         self._controller.vrun(action)
@@ -132,20 +155,21 @@ class UR5eSBEnvVelPIH(gym.Env):
       
         observation = self._get_obs()
         euc_dist = self._get_euc_dist(observation[0], observation[1], observation[2])
-        self.reward -= 0.6*euc_dist
-        self.reward -= 0.4*np.sum(np.absolute(observation))
+        self.reward -= 0.4*np.sum(np.absolute(observation[:3]))
+        self.reward -= 0.2*np.sum(np.absolute(observation[3:]))
         
-        if self.terminate_counter >= 50:
+        if self.terminate_counter >= 100:
             terminated = True
         self.terminate_counter += 1
 
         if euc_dist < self.truncate_criteria:
-            self.reward += 60
+            self.reward = 60
             truncated = True
         else: truncated = False
 
         info = self._get_info()
         reward = self.reward
+        print("Reward: {}".format(reward))
         return observation, reward, terminated, truncated, info
 
     def reset(self, seed=None, options=None):

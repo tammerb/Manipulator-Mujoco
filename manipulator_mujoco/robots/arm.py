@@ -1,13 +1,11 @@
 from dm_control import mjcf
 from manipulator_mujoco.utils.transform_utils import (
-    mat2quat
+    mat2quat,
 )
 import numpy as np
 
 class Arm():
     def __init__(self, xml_path, eef_site_name, attachment_site_name, 
-                 force_sensor_name='force_sensor', 
-                 torque_sensor_name='torque_sensor', 
                  joint_names = None, name: str = None):
         self._mjcf_root = mjcf.from_path(xml_path)
         if name:
@@ -19,10 +17,23 @@ class Arm():
         else:
             self._joints = [self._mjcf_root.find('joint', name) for name in joint_names]
         
+        self._forearm = self._mjcf_root.find('body', 'forearm_link')
         self._eef_site = self._mjcf_root.find('site', eef_site_name)
         self._attachment_site = self._mjcf_root.find('site', attachment_site_name)
         self._force_sensor = self.mjcf_model.sensor.add('force', site=self._attachment_site)
         self._torque_sensor = self.mjcf_model.sensor.add('torque', site=self._attachment_site)
+
+    @property
+    def force_sensor(self):
+        return self._force_sensor
+
+    @property
+    def torque_sensor(self):
+        return self._torque_sensor
+    
+    @property
+    def forearm(self):
+        return self._forearm
 
     @property
     def joints(self):
