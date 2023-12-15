@@ -10,7 +10,7 @@ env = gymnasium.make('manipulator_mujoco/UR5eSBEnvVelPIH-v0', render_mode='human
 observation, info = env.reset(seed=42)
 reward = 0
 # Run simulation for a fixed number of steps
-for _ in range(1000):
+for _ in range(10000):
 #while True:
     # Choose a random action from the available action space
     action = env.action_space.sample()

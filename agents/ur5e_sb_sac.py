@@ -10,11 +10,11 @@ from stable_baselines3.common.results_plotter import plot_results
 
 import os
 
-LEARN = False
-MONITOR = False
-PLAY = True
-model_name = "sac_ur5e_5"
-timesteps = 1e5
+LEARN = True
+MONITOR = True
+PLAY = False
+model_name = "sac_ur5e_6"
+timesteps = 2e5
 
 # Create log dir
 log_dir = "/home/tammer/Manipulator-Mujoco/demo/tmp/gym/"
