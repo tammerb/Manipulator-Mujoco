@@ -8,12 +8,12 @@
     </default>
   </default>
   <asset>
-    <material name="color_14789940" specular="0.5" shininess="0.5" rgba="0.8823529411764706 0.6784313725490196 0.20392156862745098 1"/>
+    <material name="color_14860437" specular="0.5" shininess="0.5" rgba="0.8862745098039215 0.7529411764705882 0.5843137254901961 1"/>
     <mesh file="peg.obj"/>
   </asset>
   <worldbody>
     <body name="peg">
-      <geom material="color_14789940" mesh="peg" class="visual"/>
+      <geom material="color_14860437" mesh="peg" class="visual"/>
       <geom mesh="peg" class="collision"/>
     </body>
   </worldbody>
