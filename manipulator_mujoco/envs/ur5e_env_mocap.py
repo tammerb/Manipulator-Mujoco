@@ -179,6 +179,8 @@ class UR5eEnv(gym.Env):
         # step physics
         self._physics.step()
 
+        print(self._physics.bind(self._arm.joints).qpos)
+
         # render frame
         if self._render_mode == "human":
             self._render_frame()
@@ -196,7 +198,7 @@ class UR5eEnv(gym.Env):
 
         info = self._get_info()
         reward = self.reward
-        print("Reward: {}".format(reward))
+        #print("Reward: {}".format(reward))
         info = self._get_info()
 
         return observation, reward, terminated, False, info

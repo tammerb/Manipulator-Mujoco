@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from stable_baselines3 import SAC
 #from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
-from save_best_train import SaveOnBestTrainingRewardCallback
+import save_best_train
 from stable_baselines3.common import results_plotter
 from stable_baselines3.common.results_plotter import plot_results
 
@@ -13,11 +13,11 @@ import os
 LEARN = True
 MONITOR = True
 PLAY = False
-model_name = "sac_ur5e_6"
-timesteps = 2e5
+model_name = "sac_ur5e_8"
+timesteps = 1e4
 
 # Create log dir
-log_dir = "/home/tammer/Manipulator-Mujoco/demo/tmp/gym/"
+log_dir = "/home/tammer/Manipulator-Mujoco/agents/tmp/" + model_name
 os.makedirs(log_dir, exist_ok=True)
 
 # Create the environment with rendering in human mode
@@ -27,7 +27,7 @@ env = gymnasium.make('manipulator_mujoco/UR5eSBEnvVelPIH-v0', render_mode='human
 
 if MONITOR:
     env = Monitor(env, log_dir)
-    callback = SaveOnBestTrainingRewardCallback(check_freq=200, log_dir=log_dir)
+    callback = save_best_train.SaveOnBestTrainingRewardCallback(check_freq=200, log_dir=log_dir)
 
 ### https://stable-baselines.readthedocs.io/en/master/modules/sac.html
 if LEARN:

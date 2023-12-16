@@ -29,7 +29,7 @@ class UR5eSBEnvVelPIH(gym.Env):
         self.action_space = spaces.Box(
             low=-1,
             high=1,
-            shape=(3, ),
+            shape=(7, ),
             dtype=np.float64)
 
         self.observation_space = spaces.Box(
@@ -155,21 +155,23 @@ class UR5eSBEnvVelPIH(gym.Env):
       
         observation = self._get_obs()
         euc_dist = self._get_euc_dist(observation[0], observation[1], observation[2])
+        self.reward = -0.6*euc_dist
         self.reward -= 0.4*np.sum(np.absolute(observation[:3]))
-        self.reward -= 0.2*np.sum(np.absolute(observation[3:]))
+        self.reward -= 0.067*np.sum(np.absolute(observation[3:]))
         
-        if self.terminate_counter >= 100:
+        #Set each episode to 100 timesteps
+        if self.terminate_counter >= 399:
             terminated = True
         self.terminate_counter += 1
 
         if euc_dist < self.truncate_criteria:
-            self.reward = 60
+            self.reward += 60
             truncated = True
         else: truncated = False
 
         info = self._get_info()
         reward = self.reward
-        print("Reward: {}".format(reward))
+        #print("Reward: {}".format(reward))
         return observation, reward, terminated, truncated, info
 
     def reset(self, seed=None, options=None):
@@ -184,12 +186,7 @@ class UR5eSBEnvVelPIH(gym.Env):
             random_arm_reset = 0
 
             self._physics.bind(self._arm.joints).qpos = [
-                0.0 + random_arm_reset,
-                -1.5707 + random_arm_reset, 
-                1.5707+ random_arm_reset,
-                -1.5707 + random_arm_reset, 
-                -1.5707 + random_arm_reset, 
-                0.0 + random_arm_reset
+                -0.25776116, -1.2351148,   2.14294879, -2.47863031, -1.57079633, -0.25776116
             ]
             # x_offset = 0.2
             # y_offset = 0.2

@@ -104,8 +104,7 @@ class OperationalSpaceController(JointEffortController):
         super().run(u)
 
     def vrun(self, target):
-        # target velocity is a 6D vector
-        target_vel = np.append(target, [0,0,0])
+        # target velocity and orientation is a 7D vector [vx, vy, vz, qx, qy, qz, qw]
 
         # Get the Jacobian matrix for the end-effector.
         J = get_site_jac(
@@ -129,8 +128,16 @@ class OperationalSpaceController(JointEffortController):
         # Initialize the task space control signal (desired end-effector motion).
         u_task = np.zeros(6)
 
+        ee_pos = self._physics.bind(self._eef_site).xpos
+        ee_quat = mat2quat(self._physics.bind(self._eef_site).xmat.reshape(3, 3))
+        ee_pose = np.concatenate([ee_pos, ee_quat])
+
+        # Calculate the orientation error (difference between the target and current orientation).
+        pose_err = pose_error(target, ee_pose)
+
         # Calculate the task space control signal.
-        u_task += self._scale_signal_vel_limited(target_vel)
+        target_with_ori = np.append(target[:3], pose_err[3:])
+        u_task += self._scale_signal_vel_limited(target_with_ori)
 
         # joint space control signal
         u = np.zeros(self._dof)
