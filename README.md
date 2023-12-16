@@ -1,3 +1,8 @@
+#### Code for "Cartesian Space Reinforcement Learning of a Robotic Peg-in-Hole Insertion Task"
+Using the Manipulator-Mujoco package described below, this implements a SAC agent from OpenAI Gymnasium for learning a Peg-in-Hole task.
+
+
+
 # Manipulator-Mujoco
 
 <p float="left">
